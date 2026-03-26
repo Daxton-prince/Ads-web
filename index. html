@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download Videos from Social Media</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .ad-top, .ad-bottom {
+            width: 100%;
+            min-height: 90px;
+            background: white;
+            margin: 10px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .ad-placeholder {
+            width: 728px;
+            max-width: 90%;
+            height: 90px;
+            background: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #666;
+            border-radius: 4px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            flex: 1;
+        }
+        h1 { text-align: center; color: #333; margin-bottom: 10px; }
+        .subtitle { text-align: center; color: #666; margin-bottom: 30px; }
+        .downloader-box {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 10px;
+        }
+        #video-url {
+            flex: 1;
+            padding: 15px;
+            font-size: 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            outline: none;
+        }
+        #video-url:focus { border-color: #007bff; }
+        #process-btn {
+            padding: 15px 30px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        #process-btn:hover { background: #0056b3; }
+        .loading { text-align: center; margin-top: 30px; }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .hidden { display: none; }
+        .result { margin-top: 30px; }
+        .video-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        #thumbnail {
+            width: 100%;
+            max-height: 400px;
+            object-fit: cover;
+            border-radius: 5px;
+        }
+        #video-title { margin: 15px 0; color: #333; }
+        .download-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .download-btn {
+            background: #28a745;
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .download-btn:hover { background: #218838; }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            text-align: center;
+        }
+        @media (max-width: 600px) {
+            .downloader-box { flex-direction: column; }
+            #process-btn { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="ad-top"><div class="ad-placeholder">Advertisement</div></div>
+    
+    <div class="container">
+        <h1>Social Media Video Downloader</h1>
+        <p class="subtitle">Paste any video link below</p>
+        
+        <div class="downloader-box">
+            <input type="url" id="video-url" placeholder="Paste URL link here..." required>
+            <button id="process-btn" onclick="processVideo()">Process Video</button>
+        </div>
+
+        <div id="loading" class="loading hidden">
+            <div class="spinner"></div>
+            <p>Processing... (5-10 seconds)</p>
+        </div>
+
+        <div id="result" class="result hidden">
+            <div class="video-card">
+                <img id="thumbnail" src="" alt="Video thumbnail">
+                <h3 id="video-title"></h3>
+                <div id="download-options" class="download-options"></div>
+            </div>
+        </div>
+
+        <div id="error" class="error hidden"></div>
+    </div>
+
+    <div class="ad-bottom"><div class="ad-placeholder">Advertisement</div></div>
+
+    <script>
+        async function processVideo() {
+            const url = document.getElementById('video-url').value;
+            if (!url) {
+                alert('Please paste a URL');
+                return;
+            }
+
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('result').classList.add('hidden');
+            document.getElementById('error').classList.add('hidden');
+
+            try {
+                // Calls our secure Vercel API (not Railway directly)
+                const response = await fetch(`/api/download?url=${encodeURIComponent(url)}`);
+                const data = await response.json();
+                
+                document.getElementById('loading').classList.add('hidden');
+                
+                if (data.success) {
+                    document.getElementById('thumbnail').src = data.thumbnail;
+                    document.getElementById('video-title').textContent = data.title;
+                    
+                    const optionsDiv = document.getElementById('download-options');
+                    optionsDiv.innerHTML = '';
+                    
+                    data.formats.forEach(format => {
+                        const btn = document.createElement('button');
+                        btn.className = 'download-btn';
+                        btn.textContent = `${format.quality} (${format.format})`;
+                        btn.onclick = () => window.open(format.url, '_blank');
+                        optionsDiv.appendChild(btn);
+                    });
+                    
+                    document.getElementById('result').classList.remove('hidden');
+                } else {
+                    document.getElementById('error').textContent = data.error || 'Failed to process';
+                    document.getElementById('error').classList.remove('hidden');
+                }
+            } catch (error) {
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('error').textContent = 'Failed to process video. Try again.';
+                document.getElementById('error').classList.remove('hidden');
+            }
+        }
+    </script>
+</body>
+</html>
