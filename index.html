@@ -7,7 +7,7 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: system-ui, -apple-system, sans-serif;
             background: #f5f5f5;
             min-height: 100vh;
             display: flex;
@@ -32,6 +32,7 @@
             align-items: center;
             color: #666;
             border-radius: 4px;
+            font-size: 14px;
         }
         .container {
             max-width: 800px;
@@ -66,6 +67,7 @@
             border-radius: 5px;
             font-size: 16px;
             cursor: pointer;
+            font-weight: bold;
         }
         #process-btn:hover { background: #0056b3; }
         .loading { text-align: center; margin-top: 30px; }
@@ -93,7 +95,7 @@
             object-fit: cover;
             border-radius: 5px;
         }
-        #video-title { margin: 15px 0; color: #333; }
+        #video-title { margin: 15px 0; color: #333; font-size: 18px; }
         .download-options {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -108,6 +110,7 @@
             border-radius: 5px;
             cursor: pointer;
             font-size: 14px;
+            font-weight: bold;
         }
         .download-btn:hover { background: #218838; }
         .error {
@@ -157,23 +160,26 @@
     <script>
         async function processVideo() {
             const url = document.getElementById('video-url').value;
+            
             if (!url) {
                 alert('Please paste a URL');
                 return;
             }
 
+            // Show loading
             document.getElementById('loading').classList.remove('hidden');
             document.getElementById('result').classList.add('hidden');
             document.getElementById('error').classList.add('hidden');
 
             try {
-                // Calls our secure Vercel API (not Railway directly)
+                // Call our own API (same domain - no CORS!)
                 const response = await fetch(`/api/download?url=${encodeURIComponent(url)}`);
                 const data = await response.json();
                 
                 document.getElementById('loading').classList.add('hidden');
                 
                 if (data.success) {
+                    // Show result
                     document.getElementById('thumbnail').src = data.thumbnail;
                     document.getElementById('video-title').textContent = data.title;
                     
@@ -190,12 +196,12 @@
                     
                     document.getElementById('result').classList.remove('hidden');
                 } else {
-                    document.getElementById('error').textContent = data.error || 'Failed to process';
+                    document.getElementById('error').textContent = data.error || 'Failed to process video';
                     document.getElementById('error').classList.remove('hidden');
                 }
             } catch (error) {
                 document.getElementById('loading').classList.add('hidden');
-                document.getElementById('error').textContent = 'Failed to process video. Try again.';
+                document.getElementById('error').textContent = 'Failed to process video. Please try again.';
                 document.getElementById('error').classList.remove('hidden');
             }
         }
